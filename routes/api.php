@@ -19,12 +19,18 @@ Route::group(['prefix' => 'v1/oauth'], function(){
     Route::post('forgot', 'Api\UserController@forgot');
     Route::post('reset', 'Api\UserController@reset');
 });
+Route::group(['prefix' => 'v1'], function(){
+    Route::get('vendor', 'Api\VendorController@vendor');
+    Route::get('vendor/{id}/logo', 'Api\VendorController@logo');
+    Route::get('vendor/{id}/header', 'Api\VendorController@header');
+});
 
 Route::group(['middleware' => ['auth:api'], 'prefix' => 'v1'], function(){
     Route::get('oauth/logout', 'Api\UserController@logout');
     Route::get('user', 'Api\UserController@user');    
     Route::post('user/password', 'Api\UserController@updatePassword');
     Route::post('user/update', 'Api\UserController@updateUser');
+    Route::post('vendor/update', 'Api\VendorController@update');
+    Route::get('vendor/account', 'Api\VendorController@account');
 
-    Route::get('vendor', 'Api\VendorController@vendor');
 });

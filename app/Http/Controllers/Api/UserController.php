@@ -82,7 +82,8 @@ class UserController extends Controller
             Vendor::create([
                 'name' => 'Not Setup',
                 'category' => 'Not Setup',
-                'user_id' => $user->id
+                'user_id' => $user->id,
+                'dir_path' => "V". $user->id ."-". time()
             ]);
         }
         //send sms

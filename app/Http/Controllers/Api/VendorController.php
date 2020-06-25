@@ -24,54 +24,87 @@ class VendorController extends Controller
         //select if 24hrs has not expired
         $vendors = DB::table('vendors')
                     ->join('users', 'users.id', '=', 'vendors.user_id')
-                    ->select('users.id, users.name, users.phone, users.email, users.location', 'vendors.*')
+                    ->select('users.*', 'vendors.*')
                     ->where('vendors.complete', 1)
                     ->get();
         return response()->json($vendors, 200);
     }
 
-        
     /** 
-     * Update user api 
+     * Vendor account api 
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function updateUser()
+    public function account()
     {
         $auth = Auth::user();
-        $input = request()->all();
-        $user = User::findOrFail($auth->id);
+        if(! $auth->isVendor()){
+            abort(403, 'User not having needed permission');
+        }
 
-        $user->email = $input['email'];
-        $user->age = $input['age'];
-        $user->brand = $input['brand'];
-        $user->national_id = $input['national_id'];
-        $user->national_id_num = $input['national_id_num'];
-        $user->experience = $input['experience'];
-        $user->engagement = $input['engagement'];
-        $user->genre = $input['genre'];
-        $user->craft = $input['craft'];
-        if ($user->save()) {
-            return response()->json(['message' => 'User updated'], $this->successStatus); 
+        $vendor = Vendor::where('user_id', $auth->id)->first();
+
+        if ($vendor != null) {
+            return response()->json($vendor, $this->successStatus); 
+        }
+        return response()->json(['error' => 'An error occurred'], 401); 
+    }
+
+        
+    /** 
+     * Update vendor api 
+     * 
+     * @return \Illuminate\Http\Response 
+     */ 
+    public function update()
+    {
+        $auth = Auth::user();
+        if(! $auth->isVendor()){
+            abort(403, 'User not having needed permission');
+        }
+        $validator = Validator::make(request()->all(), [ 
+            'name' => 'required', 
+            'category' => 'required', 
+            'service' => 'required',
+            ]);
+        if ($validator->fails()) { 
+            return response()->json(['error' => $validator->errors()], 401);            
+        }
+        $input = request()->all();
+        $vendor = Vendor::where('user_id', $auth->id)->firstOrFail();
+
+        $vendor->name = $input['name'];
+        $vendor->phone = $input['phone'];
+        $vendor->email = $input['email'];
+        $vendor->location = $input['location'];
+        $vendor->lat = $input['lat'];
+        $vendor->lng = $input['lng'];
+        $vendor->about = $input['about'];
+        $vendor->category = $input['category'];
+        $vendor->service = $input['service'];
+        $vendor->complete = true;
+
+        if ($vendor->save()) {
+            return response()->json(['message' => 'Vendor updated'], $this->successStatus); 
         }
         return response()->json(['error' => 'An error occurred'], 401); 
     }
 
     /** 
-     * Get user avatar api 
+     * Get vendor logo api 
      * 
      * @param \Model\user
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function getAvatar(User $user)
+    public function logo(Vendor $vendor)
     {
-        if (empty($user)) {
+        if (empty($vendor)) {
             return response()->json(['error'=>'An error occurred'], 401); 
         }
         
-        if (!empty($user->picture)) {
-            $file = storage_path('app/avatar/' . $user->avatar);
+        if (!empty($vendor->logo)) {
+            $file = storage_path("app/vendor/$vendor->dir_path/$vendor->logo");
             header('Content-Length: ' . filesize($file));
             header('Content-Type: image/jpeg');
             header('Content-Disposition: attachment; filename="' . basename($file) . '"');
@@ -81,21 +114,65 @@ class VendorController extends Controller
     }
 
     /** 
-     * Update avatar api 
+     * Get vendor header api 
+     * 
+     * @param \Model\user
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function updateAvatar()
+    public function header(Vendor $vendor)
     {
-        $user = Auth::user();
+        if (empty($vendor)) {
+            return response()->json(['error'=>'An error occurred'], 401); 
+        }
+        
+        if (!empty($vendor->header)) {
+            $file = storage_path("app/vendor/$vendor->dir_path/$vendor->header");
+            header('Content-Length: ' . filesize($file));
+            header('Content-Type: image/jpeg');
+            header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+            readfile($file);
+        }
+        return response()->json(['error'=>'An error occurred'], 401); 
+    }
 
-        $file = request()->file('image_upload_file');
+    /** 
+     * Update logo api 
+     * 
+     * @return \Illuminate\Http\Response 
+     */ 
+    public function updateLogo()
+    {
+        $vendor = Vendor::findOrFail(request('id'));
+
+        $file = request()->file('image_upload');
         $extension = $file->getClientOriginalExtension();
-        $path = 'avatar';
+        $path = 'vendor/'. $vendor->dir_path .'/';
         $name = 'avi_' . $user->id . '.' . $extension;
-        $user->avatar = 'avi_' . $user->id . '.' . $extension;
+        $vendor->logo = 'avi_' . $vendor->id . '.' . $extension;
 
-        if ($file->storeAs($path, $name) && $user->save()) {
+        if ($file->storeAs($path, $name) && $vendor->save()) {
+            return response()->json(['success' => $name], $this->successStatus); 
+        }
+        return response()->json(['error'=>'An error occurred'], 401); 
+    }
+
+    /** 
+     * Update header api 
+     * 
+     * @return \Illuminate\Http\Response 
+     */ 
+    public function updateHeader()
+    {
+        $vendor = Vendor::findOrFail(request('id'));
+
+        $file = request()->file('image_upload');
+        $extension = $file->getClientOriginalExtension();
+        $path = 'vendor/'. $vendor->dir_path .'/';
+        $name = 'header_' . $vendor->id . '.' . $extension;
+        $vendor->header = 'header_' . $vendor->id . '.' . $extension;
+
+        if ($file->storeAs($path, $name) && $vendor->save()) {
             return response()->json(['success' => $name], $this->successStatus); 
         }
         return response()->json(['error'=>'An error occurred'], 401); 
