@@ -83,7 +83,7 @@ class UserController extends Controller
                 'name' => 'Not Setup',
                 'category' => 'Not Setup',
                 'user_id' => $user->id,
-                'dir_path' => "V". $user->id ."-". time()
+                'dir_path' => "V". $user->id ."_". time()
             ]);
         }
         //send sms

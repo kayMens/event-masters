@@ -9,7 +9,8 @@ class Vendor extends Model
     protected $guarded = [];
 
     protected $cast = [
-        'complete' => 'bool'
+        'complete' => 'bool',
+        'service' => 'json',
     ];
 
     public function user() {
@@ -21,8 +22,8 @@ class Vendor extends Model
         return json_decode($value);
     }
 
-    public function setServiceAttribute($value)
-    {
-        $this->attributes['service'] = json_encode($value);
-    }
+    // public function setServiceAttribute($value)
+    // {
+        // $this->attributes['service'] = json_encode($value);
+    // }
 }

@@ -110,7 +110,7 @@ class VendorController extends Controller
             header('Content-Disposition: attachment; filename="' . basename($file) . '"');
             readfile($file);
         }
-        return response()->json(['error'=>'An error occurred'], 401); 
+        return response()->json(['error'=>'No logo present'], 404); 
     }
 
     /** 
@@ -133,7 +133,7 @@ class VendorController extends Controller
             header('Content-Disposition: attachment; filename="' . basename($file) . '"');
             readfile($file);
         }
-        return response()->json(['error'=>'An error occurred'], 401); 
+        return response()->json(['error'=>'No header not present'], 404); 
     }
 
     /** 
@@ -141,14 +141,12 @@ class VendorController extends Controller
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function updateLogo()
+    public function updateLogo(Vendor $vendor)
     {
-        $vendor = Vendor::findOrFail(request('id'));
-
         $file = request()->file('image_upload');
         $extension = $file->getClientOriginalExtension();
         $path = 'vendor/'. $vendor->dir_path .'/';
-        $name = 'avi_' . $user->id . '.' . $extension;
+        $name = 'avi_' . $vendor->id . '.' . $extension;
         $vendor->logo = 'avi_' . $vendor->id . '.' . $extension;
 
         if ($file->storeAs($path, $name) && $vendor->save()) {
@@ -162,10 +160,8 @@ class VendorController extends Controller
      * 
      * @return \Illuminate\Http\Response 
      */ 
-    public function updateHeader()
+    public function updateHeader(Vendor $vendor)
     {
-        $vendor = Vendor::findOrFail(request('id'));
-
         $file = request()->file('image_upload');
         $extension = $file->getClientOriginalExtension();
         $path = 'vendor/'. $vendor->dir_path .'/';

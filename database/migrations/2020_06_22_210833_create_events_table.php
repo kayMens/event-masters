@@ -24,6 +24,7 @@ class CreateEventsTable extends Migration
             $table->timestamp('end_at')->useCurrent();
             $table->text('guest');
             $table->double('budget');
+            $table->text('details')->nullable();
             $table->timestamps();
         });
     }
