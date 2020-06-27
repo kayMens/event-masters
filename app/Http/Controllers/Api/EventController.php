@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Event;
 use App\User;
+use App\Vendor;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -25,13 +26,57 @@ class EventController extends Controller
         if(! $user->isUser()) {
             abort(403, 'User not having needed permission');
         }
-        //select if 24hrs has not expired
-        $task = DB::table('events')
-                    ->join('quotes', 'quotes.event_id', '=', 'events.id')
-                    ->select('events.*', 'quotes.*')
+        $event = Event::where('user_id', $user->id)->orderBy('id', 'desc')->get();
+        return response()->json($event, 200);
+    }
+
+    /**
+     *  User event names
+     * 
+     * @return \Illumininate\Http\Response
+     */
+    public function user() {
+        $user = Auth::user();
+
+        if(! $user->isUser()) {
+            abort(403, 'User not having needed permission');
+        }
+        $events = DB::table('events')
+                    ->join('quotes', 'events.id', '=', 'quotes.event_id')
+                    ->select('quotes.book', 'events.id', 'events.title')
                     ->where('events.user_id', $user->id)
+                    ->where('quotes.book', false)
+                    ->orderBy('events.title', 'asc')
                     ->get();
-        return response()->json($task, 200);
+
+        return response()->json($events, 200);
+    }
+
+    /**
+     *  User quotes
+     * 
+     * @return \Illumininate\Http\Response
+     */
+    public function quote(int $id) {
+        $user = Auth::user();
+
+        if(! $user->isUser()) {
+            abort(403, 'User not having needed permission');
+        }
+        // $quote = DB::table('quotes')
+                    // ->join('vendors', 'quotes.vendor_id', '=', 'vendors.id')
+                    // ->select('quotes.*', 'vendors.name', 'vendors.phone', 'vendors.email')
+                    // ->where('quotes.event_id', $id)
+                    // ->orderBy('quotes.id', 'desc')
+                    // ->get();
+        $quote = DB::table('quotes')
+                    ->where('quotes.event_id', $id)
+                    ->orderBy('quotes.id', 'desc')
+                    ->get();
+        foreach ($quote as $key => $value) {
+            $quote[$key]->vendor = Vendor::find($value->vendor_id);
+        }
+        return response()->json($quote, 200);
     }
 
     /**
@@ -55,7 +100,6 @@ class EventController extends Controller
             'end_at' => 'required',
             'budget' => 'required',
             'guest' => 'required',
-            'details' => 'required',
             ]);
         if ($validator->fails()) { 
             return response()->json(['error' => $validator->errors()], 401);            
@@ -67,14 +111,46 @@ class EventController extends Controller
 
         return response()->json(['message'=> 'Event created'], $this->successStatus); 
     }
-
+    
     /**
-     * Hire deletes task if not asssgined
+     * User creates event
      * 
      * @return \Illuminate\Http\Response
      */
-    public function delete() {
+    public function requestQuote() {
+        $user = Auth::user();
 
+        if(!$user->isUser()) {
+            abort(403, 'User not having needed permission');
+        }
+
+        $validator = Validator::make(request()->all(), [ 
+            'vendor_id' => 'required', 
+            'event_id' => 'required', 
+            'quote' => 'required', 
+            'service' => 'required', 
+            ]);
+        if ($validator->fails()) { 
+            return response()->json(['error' => $validator->errors()], 401);            
+        }
+        $exist = DB::table('quotes')
+                    ->where('vendor_id', request('vendor_id'))
+                    ->where('event_id', request('event_id'))
+                    ->where('quote', request('quote'))
+                    ->where('service', request('service'))
+                    ->count();
+        if($exist){
+            return response()->json(['message' => 'Records exist'], 200);            
+        }
+
+        $input = request()->all();
+        $request = DB::table('quotes')
+                       ->insertOrIgnore($input);
+        if($request){
+            return response()->json(['message'=> 'Request created'], $this->successStatus); 
+        }
+
+        return response()->json(['error' => 'Request not made'], 401);            
     }
 
     /**
@@ -82,32 +158,34 @@ class EventController extends Controller
      * 
      * @return \Illuminate\Http\Response
      */
-    public function assign() {
+    public function book() {
         $user = Auth::user();
         
-        if(!$user->isAdmin()) {
+        if(!$user->isUser()) {
             abort(403, 'User not having needed permission');
         }
         $validator = Validator::make(request()->all(), [ 
-            'task_id' => 'required', 
-            'user_id' => 'required'
+            'id' => 'required', 
+            'vendor_id' => 'required'
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error' => $validator->errors()], 400);            
         }
-        $assign = DB::table('user_task')->insertOrIgnore([
-                    'task_id'    => request('task_id'),
-                    'user_id'    => request('user_id'),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        $request = DB::table('quotes')
+                    ->where([
+                        'id' => request('id'), 
+                        'vendor_id' => request('vendor_id')
+                        ])
+                    ->update([
+                        'book' => true, 
+                        'updated_at' => now()
+                        ]);
+        if($request) {
+            $vendor = Vendor::where(['id' => request('vendor_id')])->first();
+            //send sms to vendor
 
-        if($assign) {
-            $artiste = User::where(['id' => request('user_id')])->first();
-            //send sms to artiste
-
-            return response()->json(['message' => 'Task assigned'], $this->successStatus);
+            return response()->json(['message' => 'Vendor booked'], $this->successStatus);
         }
 
         return response()->json(['error' => 'An error occurred'], 400); 

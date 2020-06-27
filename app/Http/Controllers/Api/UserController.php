@@ -226,8 +226,8 @@ class UserController extends Controller
 
         $user->email = $input['email'];
         $user->location = $input['location'];
-        $user->lat = $input['lat'];
-        $user->lng = $input['lng'];
+        // $user->lat = $input['lat'];
+        // $user->lng = $input['lng'];
         if ($user->save()) {
             return response()->json(['message' => 'User updated'], $this->successStatus); 
         }

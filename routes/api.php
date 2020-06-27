@@ -37,5 +37,9 @@ Route::group(['middleware' => ['auth:api'], 'prefix' => 'v1'], function(){
     Route::get('vendor/account', 'Api\VendorController@account');
 
     Route::get('event', 'Api\EventController@event');
-    Route::get('quote', 'Api\EventController@quote');
+    Route::post('event/add', 'Api\EventController@create');
+    Route::get('event/user', 'Api\EventController@user');
+    Route::get('event/quote/{id}', 'Api\EventController@quote');
+    Route::put('event/requestQuote', 'Api\EventController@requestQuote');
+    Route::put('event/book', 'Api\EventController@book');
 });

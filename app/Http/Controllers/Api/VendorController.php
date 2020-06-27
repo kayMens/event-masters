@@ -23,9 +23,9 @@ class VendorController extends Controller
     public function vendor() {
         //select if 24hrs has not expired
         $vendors = DB::table('vendors')
-                    ->join('users', 'users.id', '=', 'vendors.user_id')
-                    ->select('users.*', 'vendors.*')
-                    ->where('vendors.complete', 1)
+                    ->join('users', 'vendors.user_id', '=', 'users.id')
+                    ->select('vendors.*', 'users.name as username', 'users.phone as userphone', 'users.email as useremail')
+                    ->where('vendors.complete', '1')
                     ->get();
         return response()->json($vendors, 200);
     }
