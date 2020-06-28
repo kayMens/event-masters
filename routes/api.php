@@ -21,8 +21,8 @@ Route::group(['prefix' => 'v1/oauth'], function(){
 });
 Route::group(['prefix' => 'v1'], function(){
     Route::get('vendor', 'Api\VendorController@vendor');
-    Route::get('vendor/{vendor}/logo', 'Api\VendorController@logo');
-    Route::get('vendor/{vendor}/header', 'Api\VendorController@header');
+    Route::get('vendor/{vendor}/logo/{num}', 'Api\VendorController@logo');
+    Route::get('vendor/{vendor}/header/{num}', 'Api\VendorController@header');
 });
 
 Route::group(['middleware' => ['auth:api'], 'prefix' => 'v1'], function(){
@@ -35,6 +35,8 @@ Route::group(['middleware' => ['auth:api'], 'prefix' => 'v1'], function(){
     Route::post('vendor/{vendor}/logo', 'Api\VendorController@updateLogo');
     Route::post('vendor/{vendor}/header', 'Api\VendorController@updateHeader');
     Route::get('vendor/account', 'Api\VendorController@account');
+    Route::get('vendor/quote', 'Api\VendorController@quoteRequest');
+    Route::put('vendor/quote', 'Api\VendorController@setQuote');
 
     Route::get('event', 'Api\EventController@event');
     Route::post('event/add', 'Api\EventController@create');

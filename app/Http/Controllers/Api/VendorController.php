@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\User;
 use App\Vendor;
 use GuzzleHttp\Exception\GuzzleException;
@@ -90,6 +91,74 @@ class VendorController extends Controller
         return response()->json(['error' => 'An error occurred'], 401); 
     }
 
+    /**
+     *  Vendor requests
+     * 
+     * @return \Illumininate\Http\Response
+     */
+    public function quoteRequest() {
+        $user = Auth::user();
+
+        if(! $user->isVendor()) {
+            abort(403, 'User not having needed permission');
+        }
+        $vendor = Vendor::where('user_id', $user->id)->firstOrFail();
+
+        $request = DB::table('quotes')
+                    ->join('events', 'quotes.event_id', '=','events.id')
+                    ->join('users', 'events.user_id', '=','users.id')
+                    ->select('events.*', 'quotes.quote', 'quotes.service', 'quotes.book', 'users.name', 'users.email', 'users.phone')
+                    ->where('quotes.vendor_id', $vendor->id)
+                    ->orderby('quotes.id', 'desc')
+                    ->get();
+
+        foreach ($request as $key => $value) {
+            unset($request[$key]->user_id);
+            unset($request[$key]->created_at);
+            unset($request[$key]->updated_at);
+        } 
+        return response()->json($request, 200);
+    }
+
+    /**
+     * Vendor set quote
+     * 
+     * @return \Illuminate\Http\Response
+     */
+    public function setQuote() {
+        $user = Auth::user();
+
+        if(!$user->isVendor()) {
+            abort(403, 'User not having needed permission');
+        }
+
+        $validator = Validator::make(request()->all(), [ 
+            'vendor_id' => 'required', 
+            'event_id' => 'required', 
+            'quote' => 'required', 
+        ]);
+        if ($validator->fails()) { 
+            return response()->json(['error' => $validator->errors()], 401);            
+        }
+        $vendor = Vendor::where('user_id', $user->id)->firstOrFail();
+        
+        $input = request()->all();
+        $request = DB::table('quotes')
+                        ->where([
+                            'vendor_id' => $vendor->id,
+                            'event_id'  => $input['event_id']
+                        ])
+                       ->update([
+                           'quote' => $input['quote'],
+                           'updated_at' => now()
+                       ]);
+        if($request){
+            return response()->json(['message'=> 'Quote updated'], $this->successStatus); 
+        }
+
+        return response()->json(['error' => 'Quote not updated'], 401);            
+    }
+
     /** 
      * Get vendor logo api 
      * 
@@ -147,11 +216,13 @@ class VendorController extends Controller
         $extension = $file->getClientOriginalExtension();
         $path = 'vendor/'. $vendor->dir_path .'/';
         $name = 'avi_' . $vendor->id . '.' . $extension;
-        $vendor->logo = 'avi_' . $vendor->id . '.' . $extension;
+        $vendor->logo = $name;
+        $vendor->logo_at = time();
 
         if ($file->storeAs($path, $name) && $vendor->save()) {
             return response()->json(['success' => $name], $this->successStatus); 
         }
+
         return response()->json(['error'=>'An error occurred'], 401); 
     }
 
@@ -166,9 +237,17 @@ class VendorController extends Controller
         $extension = $file->getClientOriginalExtension();
         $path = 'vendor/'. $vendor->dir_path .'/';
         $name = 'header_' . $vendor->id . '.' . $extension;
-        $vendor->header = 'header_' . $vendor->id . '.' . $extension;
+        $vendor->header = $name;
+        $vendor->header_at = time();
+
 
         if ($file->storeAs($path, $name) && $vendor->save()) {
+            // if(! empty($vendor->header)){
+                // Storage::delete($path . $vendor->header);
+                // unlink(storage_path('app/' . $path . $vendor->header)); //alternative to Storage::delete()
+            // }
+            // $vendor->header = $name;
+            // $vendor->save();
             return response()->json(['success' => $name], $this->successStatus); 
         }
         return response()->json(['error'=>'An error occurred'], 401); 

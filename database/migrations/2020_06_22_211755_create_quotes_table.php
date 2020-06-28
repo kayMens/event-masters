@@ -15,8 +15,8 @@ class CreateQuotesTable extends Migration
     {
         Schema::create('quotes', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->bigInteger('vendor_id')->unsigned();
-            $table->bigInteger('event_id')->unsigned();
+            $table->bigInteger('vendor_id')->unsigned()->unique();
+            $table->bigInteger('event_id')->unsigned()->unique();
             $table->double('quote');
             $table->text('service');
             $table->timestamps();

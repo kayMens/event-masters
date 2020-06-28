@@ -26,7 +26,23 @@ class EventController extends Controller
         if(! $user->isUser()) {
             abort(403, 'User not having needed permission');
         }
-        $event = Event::where('user_id', $user->id)->orderBy('id', 'desc')->get();
+        // $event = Event::where('user_id', $user->id)->orderBy('id', 'desc')->get();
+        // foreach ($event as $key => $value) {
+            // $event[$key]->service = DB::table('quotes')->select('quotes.service')->where('quotes.event_id', $value->id)->get();
+            // unset($event[$key]->created_at);
+            // unset($event[$key]->update_at);
+        // }
+        $event = DB::table('events')
+                    ->join('quotes', 'events.id', '=','quotes.event_id')
+                    ->select('events.*', 'quotes.service')
+                    ->where('events.user_id', $user->id)
+                    ->orderby('id', 'desc')
+                    ->get();
+
+        foreach ($event as $key => $value) {
+            unset($event[$key]->created_at);
+            unset($event[$key]->updated_at);
+        } 
         return response()->json($event, 200);
     }
 
