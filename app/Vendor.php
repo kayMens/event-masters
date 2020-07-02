@@ -14,7 +14,7 @@ class Vendor extends Model
     ];
 
     public function user() {
-        return $this->hasOne('App\User', 'user_id');
+        return $this->belongsTo('\App\User', 'user_id');
     }
 
     public function getServiceAttribute($value)

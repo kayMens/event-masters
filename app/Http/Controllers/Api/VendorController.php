@@ -22,12 +22,25 @@ class VendorController extends Controller
      * @return \Illumininate\Http\Response
      */
     public function vendor() {
-        //select if 24hrs has not expired
-        $vendors = DB::table('vendors')
-                    ->join('users', 'vendors.user_id', '=', 'users.id')
-                    ->select('vendors.*', 'users.name as username', 'users.phone as userphone', 'users.email as useremail')
-                    ->where('vendors.complete', '1')
-                    ->get();
+        // $vendors = DB::table('vendors')
+                    // ->join('users', 'vendors.user_id', '=', 'users.id')
+                    // ->select('vendors.*', 'users.name as username', 'users.phone as userphone', 'users.email as useremail')
+                    // ->where('vendors.complete', '1')
+                    // ->get();
+        $vendors = Vendor::where('complete', '1')->get();
+        foreach ($vendors as $key => $value) {
+            $vendors[$key]->user = User::where('id', $value->user_id)->first();
+            $vendors[$key]->user->vendor_complete = true;
+            $vendors[$key]->user->token = '';
+            unset($vendors[$key]->user_id);
+            unset($vendors[$key]->dir_path);
+            unset($vendors[$key]->created_at);
+            unset($vendors[$key]->updated_at);
+            unset($vendors[$key]->user->otp);
+            unset($vendors[$key]->user->created_at);
+            unset($vendors[$key]->user->updated_at);
+            unset($vendors[$key]->user->phone_verified_at);
+        }
         return response()->json($vendors, 200);
     }
 
@@ -107,13 +120,12 @@ class VendorController extends Controller
         $request = DB::table('quotes')
                     ->join('events', 'quotes.event_id', '=','events.id')
                     ->join('users', 'events.user_id', '=','users.id')
-                    ->select('events.*', 'quotes.quote', 'quotes.service', 'quotes.book', 'users.name', 'users.email', 'users.phone')
+                    ->select('events.*', 'quotes.quote', 'quotes.service', 'quotes.book','users.id as uuid', 'users.name', 'users.email', 'users.phone')
                     ->where('quotes.vendor_id', $vendor->id)
                     ->orderby('quotes.id', 'desc')
                     ->get();
 
         foreach ($request as $key => $value) {
-            unset($request[$key]->user_id);
             unset($request[$key]->created_at);
             unset($request[$key]->updated_at);
         } 
