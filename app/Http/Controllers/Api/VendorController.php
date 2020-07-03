@@ -120,7 +120,7 @@ class VendorController extends Controller
         $request = DB::table('quotes')
                     ->join('events', 'quotes.event_id', '=','events.id')
                     ->join('users', 'events.user_id', '=','users.id')
-                    ->select('events.*', 'quotes.quote', 'quotes.service', 'quotes.book','users.id as uuid', 'users.name', 'users.email', 'users.phone')
+                    ->select('events.*', 'quotes.quote', 'quotes.service', 'quotes.book', 'users.name', 'users.email', 'users.phone')
                     ->where('quotes.vendor_id', $vendor->id)
                     ->orderby('quotes.id', 'desc')
                     ->get();
@@ -158,7 +158,8 @@ class VendorController extends Controller
         $request = DB::table('quotes')
                         ->where([
                             'vendor_id' => $vendor->id,
-                            'event_id'  => $input['event_id']
+                            'event_id'  => $input['event_id'],
+                            'book' => false
                         ])
                        ->update([
                            'quote' => $input['quote'],
