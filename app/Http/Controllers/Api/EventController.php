@@ -106,7 +106,7 @@ class EventController extends Controller
             'lat' => 'required', 
             'lng' => 'required', 
             'start_at' => 'required',
-            'end_at' => 'required',
+//            'end_at' => 'required',
             'budget' => 'required',
             'guest' => 'required',
             ]);
@@ -136,7 +136,7 @@ class EventController extends Controller
         $validator = Validator::make(request()->all(), [ 
             'vendor_id' => 'required', 
             'event_id' => 'required', 
-            'quote' => 'required', 
+            // 'quote' => 'required', 
             'service' => 'required', 
             ]);
         if ($validator->fails()) { 
@@ -145,7 +145,7 @@ class EventController extends Controller
         $exist = DB::table('quotes')
                     ->where('vendor_id', request('vendor_id'))
                     ->where('event_id', request('event_id'))
-                    ->where('quote', request('quote'))
+                    // ->where('quote', request('quote'))
                     ->where('service', request('service'))
                     ->count();
         if($exist){
@@ -286,7 +286,7 @@ class EventController extends Controller
                 'key' => 'value',
                 'msg' => urlencode($msg),
                 'to'  => urlencode($contact),
-                'sender_id' => 'MusikEmpire'
+                'sender_id' => 'EMasters'
             ]
         ]);
         $response = $response->getBody()->getContents();

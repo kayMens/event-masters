@@ -32,6 +32,8 @@ class VendorController extends Controller
             $vendors[$key]->user = User::where('id', $value->user_id)->first();
             $vendors[$key]->user->vendor_complete = true;
             $vendors[$key]->user->token = '';
+            $vendors[$key]->lat = $vendors[$key]->lat == NULL ? 0.0 : doubleval($vendors[$key]->lat);
+            $vendors[$key]->lng = $vendors[$key]->lng == NULL ? 0.0 : doubleval($vendors[$key]->lng);
             unset($vendors[$key]->user_id);
             unset($vendors[$key]->dir_path);
             unset($vendors[$key]->created_at);
@@ -57,8 +59,9 @@ class VendorController extends Controller
         }
 
         $vendor = Vendor::where('user_id', $auth->id)->first();
-
+        
         if ($vendor != null) {
+            $vendor['user'] = $auth;
             return response()->json($vendor, $this->successStatus); 
         }
         return response()->json(['error' => 'An error occurred'], 401); 

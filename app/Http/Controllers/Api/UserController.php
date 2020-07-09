@@ -42,7 +42,10 @@ class UserController extends Controller
                 $auth['vendor_complete'] = false;
             }
             $auth['token'] =  $auth->createToken("EventMaster-User-$auth->id")->accessToken; 
-            
+            unset($auth['otp']);
+            unset($auth['created_at']);
+            unset($auth['updated_at']);
+            unset($auth['phone_verified_at']);
             return response()->json(['user' => $auth], $this->successStatus); 
         } 
         
@@ -87,6 +90,7 @@ class UserController extends Controller
             ]);
         }
         //send sms
+        $this->sendSms($user->phone, $otp);
         return response()->json(['message' => 'User created'], $this->successStatus); 
     }
 
@@ -150,7 +154,7 @@ class UserController extends Controller
         $otp = rand(100000, 999999);
         $user->otp = $otp;
         if ($user->save()) {
-            //$this->sendSms($user->phone, $otp);
+            $this->sendSms($user->phone, $otp);
             return response()->json(['message' => 'OTP sent'], $this->successStatus); 
         }
 
@@ -276,11 +280,21 @@ class UserController extends Controller
      */
     private function sendSms(String $contact, String $otp)
     {
-        $client = new Client(); //GuzzleHttp\Client
-        $response = $client->post('your-request-uri', [
-            'form_params' => [
-                'sample-form-data' => 'value'
-            ]
+        $url = "http://dstr.connectbind.com/sendsms?";
+
+		$client = new Client([
+	   		'base_uri'	=> $url,
+	   		'debug' 	=> false,
+	   		'timeout'  	=> 8.0,
+	   		'headers' 	=> [
+	   		        'Content-Type'  => 'text/plain;charset=UTF-8',
+					'User-Agent' 	=> 'Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.64 Safari/537.36'
+				]
+	   	]);
+		$live_url = "username=ghgh-MobileApp&password=@Ironma1&type=0&dlr=0&destination=". $contact ."&source=E Masters&message=Your Event Masters code is " . $otp; 
+        $response = $client->request('GET', $url, [
+            'query' => $live_url,
+            'allow_redirects' => false
         ]);
         $response = $response->getBody()->getContents();
     }
