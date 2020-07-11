@@ -59,7 +59,7 @@ class VendorController extends Controller
         }
 
         $vendor = Vendor::where('user_id', $auth->id)->first();
-        
+
         if ($vendor != null) {
             $vendor['user'] = $auth;
             return response()->json($vendor, $this->successStatus); 
@@ -228,6 +228,34 @@ class VendorController extends Controller
      */ 
     public function updateLogo(Vendor $vendor)
     {
+        $file = request()->file('image_upload');
+        $extension = $file->getClientOriginalExtension();
+        $path = 'vendor/'. $vendor->dir_path .'/';
+        $name = 'avi_' . $vendor->id . '.' . $extension;
+        $vendor->logo = $name;
+        $vendor->logo_at = time();
+
+        if ($file->storeAs($path, $name) && $vendor->save()) {
+            return response()->json(['success' => $name], $this->successStatus); 
+        }
+
+        return response()->json(['error'=>'An error occurred'], 401); 
+    }
+    
+    /** 
+     * Update logo api 
+     * 
+     * @return \Illuminate\Http\Response 
+     */ 
+    public function updateLogoSetup()
+    {
+        $user = Auth::user();
+
+        if(! $user->isVendor()) {
+            abort(403, 'User not having needed permission');
+        }
+        $vendor = Vendor::where('user_id', $user->id)->firstOrFail();
+        
         $file = request()->file('image_upload');
         $extension = $file->getClientOriginalExtension();
         $path = 'vendor/'. $vendor->dir_path .'/';

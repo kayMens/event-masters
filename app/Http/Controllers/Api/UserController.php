@@ -34,6 +34,7 @@ class UserController extends Controller
                 $user->otp = $otp;
                 $user->save();
                 //send sms
+                $this->sendSms($user->phone, $otp);
                 return response()->json(['error' => 'User not active'], $this->successStatus);
             }
             if($auth->isVendor()){
@@ -42,10 +43,12 @@ class UserController extends Controller
                 $auth['vendor_complete'] = false;
             }
             $auth['token'] =  $auth->createToken("EventMaster-User-$auth->id")->accessToken; 
+            
             unset($auth['otp']);
             unset($auth['created_at']);
             unset($auth['updated_at']);
             unset($auth['phone_verified_at']);
+            
             return response()->json(['user' => $auth], $this->successStatus); 
         } 
         
@@ -280,6 +283,7 @@ class UserController extends Controller
      */
     private function sendSms(String $contact, String $otp)
     {
+        $contact = ltrim($contact, '+');
         $url = "http://dstr.connectbind.com/sendsms?";
 
 		$client = new Client([

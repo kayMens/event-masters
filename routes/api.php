@@ -33,6 +33,7 @@ Route::group(['middleware' => ['auth:api'], 'prefix' => 'v1'], function(){
 
     Route::post('vendor/update', 'Api\VendorController@update');
     Route::post('vendor/{vendor}/logo', 'Api\VendorController@updateLogo');
+    Route::post('vendor/logo', 'Api\VendorController@updateLogoSetup');
     Route::post('vendor/{vendor}/header', 'Api\VendorController@updateHeader');
     Route::get('vendor/account', 'Api\VendorController@account');
     Route::get('vendor/quote', 'Api\VendorController@quoteRequest');
